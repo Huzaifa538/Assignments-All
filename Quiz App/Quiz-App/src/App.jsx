@@ -12,6 +12,10 @@ function App() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // New state for ID input and record storage
+  const [roll, setRoll] = useState("");
+  const [records, setRecords] = useState({});
+
   const passGif =
     "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDF1YjFnMng4eTR3NzAwMXdoYXVtcjY5ZnY2a3cza2l2c2FpcW05NiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/WXB88TeARFVvi/giphy.gif";
   const failGif =
@@ -20,9 +24,7 @@ function App() {
   useEffect(() => {
     async function fetchQuiz() {
       try {
-        const res = await fetch(
-          "https://opentdb.com/api.php?amount=10&type=multiple"
-        );
+        const res = await fetch("https://opentdb.com/api.php?amount=10&type=multiple");
         const data = await res.json();
         const formatted = data.results.map((q) => {
           const options = [...q.incorrect_answers];
@@ -41,7 +43,6 @@ function App() {
         setLoading(false);
       } catch (err) {
         console.error("Error fetching quiz:", err);
-       
         setLoading(false);
       }
     }
@@ -76,6 +77,38 @@ function App() {
     setFinished(true);
   }
 
+  function handleSaveResult() {
+    if (!/^\d+$/.test(roll)) {
+      alert("❌ Roll Number must contain **numbers only**.");
+      return;
+    }
+
+    const newRecord = {
+      name: `Student ${roll}`,
+      roll: roll,
+      cls: "10th",
+      score: score,
+    };
+
+    setRecords((prev) => ({ ...prev, [roll]: newRecord }));
+    alert("✅ Result saved successfully!");
+
+    // Reset for new quiz
+    setCurrent(0);
+    setScore(0);
+    setSelected(null);
+    setFinished(false);
+    setShowAnswer(false);
+    setShowResultBtn(false);
+    setRoll("");
+    setQuizData((prev) =>
+      prev.map((q) => ({
+        ...q,
+        userAnswer: null,
+      }))
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
@@ -93,7 +126,6 @@ function App() {
       <div className="bg-gray-800 shadow-lg rounded-2xl p-6 w-full max-w-lg">
         <h1 className="text-2xl font-bold text-center mb-6">Quiz App</h1>
 
-        {/* Progress Line */}
         <div className="flex gap-1 mb-4">
           {quizData.map((q, idx) => (
             <div
@@ -142,28 +174,30 @@ function App() {
                 pass ? "text-green-400" : "text-red-400"
               }`}
             >
-              {pass ? "You Passed ✅" : "You Failed ❌"}
+              {pass ? "You Passed 🎉" : "You Failed 😢"}
             </h3>
             <img
               src={pass ? passGif : failGif}
               alt={pass ? "Passed" : "Failed"}
               className="mx-auto my-4 w-48 h-48 rounded-lg shadow-lg"
             />
+
+            {/* ✅ Roll Number Input */}
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              placeholder="Enter Roll Number (numbers only)"
+              value={roll}
+              onChange={(e) => setRoll(e.target.value)}
+              className="w-full mb-3 p-2 rounded text-black"
+            />
+
             <button
-              onClick={() => {
-                setCurrent(0);
-                setScore(0);
-                setSelected(null);
-                setFinished(false);
-                setShowAnswer(false);
-                setShowResultBtn(false);
-                setQuizData((prev) =>
-                  prev.map((q) => ({ ...q, userAnswer: null }))
-                );
-              }}
-              className="mt-6 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-white transition"
+              onClick={handleSaveResult}
+              className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-white transition"
             >
-              Restart Quiz
+              Save Result & Restart Quiz
             </button>
           </div>
         )}
